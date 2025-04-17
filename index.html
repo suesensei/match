@@ -108,7 +108,6 @@ function resetDrag(){
   dragEl.style.top='';
   dragEl.style.zIndex='';
   startParent.appendChild(dragEl);
-}(){dragEl.style.position='relative';dragEl.style.left='';dragEl.style.top='';dragEl.style.zIndex='';startParent.appendChild(dragEl);} 
 function handleCustomDrop(targetWordEl,draggedWord){const matchTarget=targetWordEl.dataset.word;if(draggedWord===matchTarget){targetWordEl.classList.add('matched');const card=document.querySelector(`#wordArea [data-word='${draggedWord}']`)||dragEl;card.classList.add('matched');card.removeEventListener('pointerdown',pointerDown);pairsLeft--;speakWord(draggedWord);if(pairsLeft===0)setTimeout(()=>alert('Great! You matched all words!'),200);}else{speakWord(matchTarget,true);resetDrag();}}
 /******** Speech ***********/
 function speakWord(txt,err=false){if('speechSynthesis'in window){window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(addArticle(txt));u.lang='en-US';u.rate=err?1.2:1;window.speechSynthesis.speak(u);}}
