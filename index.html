@@ -3,18 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Picture‑Word Match (CEFR A1) – Touch Friendly</title>
+<title>Picture‑Word Match (Touch‑Friendly)</title>
 <style>
-  *{box-sizing:border-box;font-family:Arial,Helvetica,sans-serif;touch-action:none}
+  *{box-sizing:border-box;font-family:Arial,Helvetica,sans-serif}
   body{margin:0;padding:20px;background:#f0f8ff}
   h1{text-align:center;margin-top:0}
   #controls{display:flex;justify-content:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
-  #game-area{display:flex;justify-content:center;gap:40px;flex-wrap:wrap;position:relative}
-  .area{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;max-width:600px}
-  .img-card,.word-card{width:120px;height:120px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:bold;user-select:none}
-  .img-card{font-size:2.8rem;background:#fff3e0;border:3px solid #ffb74d;color:#000;position:relative}
-  .word-card{font-size:1rem;background:#e3f2fd;border:3px solid #64b5f6;cursor:grab;padding:6px;text-align:center;line-height:1.1;position:relative;touch-action:none}
-  .matched{opacity:0.35;cursor:default}
+  #game-area{display:flex;justify-content:center;gap:36px;flex-wrap:wrap;max-width:1300px;margin:0 auto}
+  .area{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;max-width:600px;min-height:300px}
+  .img-card,.word-card{width:120px;height:120px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:bold;user-select:none;touch-action:none}
+  .img-card{font-size:2.6rem;background:#fff3e0;border:3px solid #ffb74d;color:#000}
+  .word-card{font-size:.95rem;background:#e3f2fd;border:3px solid #64b5f6;cursor:grab;padding:6px;text-align:center;line-height:1.15}
+  .matched{opacity:.35;cursor:default}
 </style>
 </head>
 <body>
@@ -28,7 +28,7 @@
   <div id="wordArea" class="area"></div>
 </div>
 <script>
-/*************** Data *****************/
+/**************** Data *****************/
 const categories={
   Food:["apple","bread","milk","rice","egg","apples","eggs"],
   Animals:["dog","cat","bird","fish","elephant","dogs","cats","birds","fish","elephants"],
@@ -41,7 +41,7 @@ const categories={
   Actions:["I sleep.","I run.","I drink juice.","I brush my teeth.","I eat sushi."],
   Feelings:["I am happy.","I am sad.","I am tired.","I am hungry.","I am angry."]
 };
-/*************** Emoji map *****************/
+/**************** Emoji map *****************/
 const emoji={
   apple:"🍎",apples:"🍎🍎",bread:"🍞",milk:"🥛",rice:"🍚",egg:"🥚",eggs:"🥚🥚",
   dog:"🐶",dogs:"🐶🐶",cat:"🐱",cats:"🐱🐱",bird:"🐦",birds:"🐦🐦",fish:"🐟",elephant:"🐘",elephants:"🐘🐘",
@@ -54,70 +54,38 @@ const emoji={
   "I sleep.":"😴","I run.":"🏃","I drink juice.":"🧃","I brush my teeth.":"🪥🦷","I eat sushi.":"🍣🥢",
   "I am happy.":"😊","I am sad.":"😢","I am tired.":"🥱","I am hungry.":"🤤","I am angry.":"😠"
 };
-/******** Utility for articles ***********/
-const noArt=["bread","milk","rice","pants","shoes",...categories.Colors,...categories.Numbers,...categories.Weather,...categories.Actions,...categories.Feelings];
+/************ Helpers *************/
+const noArticle=["bread","milk","rice","pants","shoes",...categories.Colors,...categories.Numbers,...categories.Weather,...categories.Actions,...categories.Feelings];
 const vowels=["a","e","i","o","u"];
-function addArticle(w){return(!noArt.includes(w)&&!w.endsWith("s"))?(vowels.includes(w[0].toLowerCase())?"an ":"a ")+w:w;}
-function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}}
-/******** Elements ***********/
+const addArticle=w=>(!noArticle.includes(w)&&!w.endsWith("s"))?(vowels.includes(w[0].toLowerCase())?"an ":"a ")+w:w;
+const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}};
+
+/************ DOM refs *************/
 const sel=document.getElementById('categorySelect');
 const btn=document.getElementById('startBtn');
 const imgArea=document.getElementById('imageArea');
 const wordArea=document.getElementById('wordArea');
 Object.keys(categories).forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;sel.appendChild(o);});
-/******** Drag vars ***********/
-let dragEl=null,offsetX=0,offsetY=0,startParent=null,pairsLeft=0;
-function pointerDown(e){
-  // support mouse, touch, stylus
-  dragEl=e.currentTarget;
-  startParent=dragEl.parentElement;
-  offsetX=dragEl.clientWidth/2;
-  offsetY=dragEl.clientHeight/2;
-  dragEl.style.position='absolute';
-  dragEl.style.zIndex='1000';
-  moveAt(e.pageX,e.pageY);
-  document.addEventListener('pointermove',pointerMove);
-  dragEl.setPointerCapture(e.pointerId);
-}
-function pointerMove(e){
-  moveAt(e.pageX,e.pageY);
-}
-function moveAt(pageX,pageY){
-  dragEl.style.left=(pageX-offsetX)+'px';
-  dragEl.style.top=(pageY-offsetY)+'px';
-}
-function pointerUp(e){
-  if(!dragEl) return;
-  dragEl.releasePointerCapture(e.pointerId);
-  document.removeEventListener('pointermove',pointerMove);
-  const dropEl=document.elementFromPoint(e.clientX,e.clientY);
-  let target=dropEl;
-  while(target && !target.classList.contains('img-card')){
-    target=target.parentElement;
-  }
-  if(target){
-    handleCustomDrop(target,dragEl.dataset.word);
-  }else{
-    resetDrag();
-  }
-  dragEl=null;
-}
-function resetDrag(){
-  dragEl.style.position='relative';
-  dragEl.style.left='';
-  dragEl.style.top='';
-  dragEl.style.zIndex='';
-  startParent.appendChild(dragEl);
-function handleCustomDrop(targetWordEl,draggedWord){const matchTarget=targetWordEl.dataset.word;if(draggedWord===matchTarget){targetWordEl.classList.add('matched');const card=document.querySelector(`#wordArea [data-word='${draggedWord}']`)||dragEl;card.classList.add('matched');card.removeEventListener('pointerdown',pointerDown);pairsLeft--;speakWord(draggedWord);if(pairsLeft===0)setTimeout(()=>alert('Great! You matched all words!'),200);}else{speakWord(matchTarget,true);resetDrag();}}
-/******** Speech ***********/
-function speakWord(txt,err=false){if('speechSynthesis'in window){window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(addArticle(txt));u.lang='en-US';u.rate=err?1.2:1;window.speechSynthesis.speak(u);}}
-/******** Build board ***********/
-function startGame(){const cat=sel.value;const words=[...categories[cat]];pairsLeft=words.length;imgArea.innerHTML='';wordArea.innerHTML='';
- words.forEach(w=>{const d=document.createElement('div');d.className='img-card';d.dataset.word=w;d.textContent=emoji[w]||w;imgArea.appendChild(d);});
- shuffle(words);
- words.forEach(w=>{const d=document.createElement('div');d.className='word-card';d.dataset.word=w;d.textContent=addArticle(w);d.addEventListener('pointerdown',pointerDown);d.addEventListener('pointerup',pointerUp);wordArea.appendChild(d);});}
-btn.addEventListener('click',startGame);
-startGame();
+
+/******** Drag state *************/
+let dragEl=null,startX=0,startY=0,offsetX=0,offsetY=0,startParent=null,pairsLeft=0;
+
+function onPointerDown(e){dragEl=e.currentTarget;startParent=dragEl.parentElement;offsetX=dragEl.offsetWidth/2;offsetY=dragEl.offsetHeight/2;dragEl.style.position='absolute';dragEl.style.zIndex='1000';moveAt(e.pageX,e.pageY);dragEl.setPointerCapture(e.pointerId);dragEl.addEventListener('pointermove',onPointerMove);dragEl.addEventListener('pointerup',onPointerUp);} 
+function onPointerMove(e){moveAt(e.pageX,e.pageY);} 
+function moveAt(x,y){dragEl.style.left=x-offsetX+'px';dragEl.style.top=y-offsetY+'px';}
+function onPointerUp(e){dragEl.releasePointerCapture(e.pointerId);dragEl.removeEventListener('pointermove',onPointerMove);const drop=document.elementFromPoint(e.clientX,e.clientY);let target=drop;while(target&&!target.classList.contains('img-card')) target=target.parentElement;if(target){handleDrop(target,dragEl.dataset.word);}else{resetDrag();}dragEl=null;}
+function resetDrag(){if(!dragEl) return;dragEl.style.position='relative';dragEl.style.left='';dragEl.style.top='';dragEl.style.zIndex='';startParent.appendChild(dragEl);} 
+
+function handleDrop(targetCard,word){if(word===targetCard.dataset.word){targetCard.classList.add('matched');const pair=document.querySelector(`.word-card[data-word="${word}"]`);pair.classList.add('matched');pair.removeEventListener('pointerdown',onPointerDown);pairsLeft--;speak(word);if(pairsLeft===0) setTimeout(()=>alert('Great! You matched all words!'),200);}else{resetDrag();speak(targetCard.dataset.word,true);}}
+
+/******** Speech *************/
+function speak(txt,err=false){if('speechSynthesis'in window){window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(addArticle(txt));u.lang='en-US';u.rate=err?1.3:1;window.speechSynthesis.speak(u);}}
+
+/******** Build board *************/
+function buildBoard(){const cat=sel.value;const words=[...categories[cat]];pairsLeft=words.length;imgArea.innerHTML='';wordArea.innerHTML='';words.forEach(w=>{const c=document.createElement('div');c.className='img-card';c.textContent=emoji[w]||w;c.dataset.word=w;imgArea.appendChild(c);});shuffle(words);words.forEach(w=>{const c=document.createElement('div');c.className='word-card';c.textContent=addArticle(w);c.dataset.word=w;c.addEventListener('pointerdown',onPointerDown);wordArea.appendChild(c);});}
+
+btn.addEventListener('click',buildBoard);
+buildBoard();
 </script>
 </body>
 </html>
