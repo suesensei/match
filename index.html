@@ -67,15 +67,26 @@ const wordArea=document.getElementById('wordArea');
 Object.keys(categories).forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;sel.appendChild(o);});
 /******** Drag vars ***********/
 let dragEl=null,offsetX=0,offsetY=0,startParent=null,pairsLeft=0;
-function pointerDown(e){if(e.button>0)return;dragEl=e.currentTarget;startParent=dragEl.parentElement;offsetX=e.offsetX;offsetY=e.offsetY;dragEl.style.position='absolute';dragEl.style.zIndex='1000';moveAt(e.pageX,e.pageY);document.addEventListener('pointermove',pointerMove);dragEl.setPointerCapture(e.pointerId);} 
-function pointerMove(e){moveAt(e.pageX,e.pageY);} 
-function pointerUp(e){if(!dragEl)return;dragEl.releasePointerCapture(e.pointerId);document.removeEventListener('pointermove',pointerMove);
- const dropEl=document.elementFromPoint(e.clientX,e.clientY);
- let target=dropEl;
- while(target && !target.classList.contains('img-card')) target=target.parentElement;
- if(target){handleCustomDrop(target,dragEl.dataset.word);} else {resetDrag();}
- dragEl=null;}
-function moveAt(pageX,pageY){dragEl.style.left=pageX-offsetX+'px';dragEl.style.top=pageY-offsetY+'px';}
+function pointerDown(e){
+  if(e.button>0)return;
+  dragEl=e.currentTarget;
+  startParent=dragEl.parentElement;
+  // center the card under the pointer (works for touch & mouse)
+  offsetX=dragEl.clientWidth/2;
+  offsetY=dragEl.clientHeight/2;
+  dragEl.style.position='absolute';
+  dragEl.style.zIndex='1000';
+  moveAt(e.pageX,e.pageY);
+  document.addEventListener('pointermove',pointerMove);
+  dragEl.setPointerCapture(e.pointerId);
+}
+function pointerMove(e){
+  moveAt(e.pageX,e.pageY);
+}
+function moveAt(pageX,pageY){
+  dragEl.style.left=pageX-offsetX+'px';
+  dragEl.style.top=pageY-offsetY+'px';
+}(pageX,pageY){dragEl.style.left=pageX-offsetX+'px';dragEl.style.top=pageY-offsetY+'px';}
 function resetDrag(){dragEl.style.position='relative';dragEl.style.left='';dragEl.style.top='';dragEl.style.zIndex='';startParent.appendChild(dragEl);} 
 function handleCustomDrop(targetWordEl,draggedWord){const matchTarget=targetWordEl.dataset.word;if(draggedWord===matchTarget){targetWordEl.classList.add('matched');const card=document.querySelector(`#wordArea [data-word='${draggedWord}']`)||dragEl;card.classList.add('matched');card.removeEventListener('pointerdown',pointerDown);pairsLeft--;speakWord(draggedWord);if(pairsLeft===0)setTimeout(()=>alert('Great! You matched all words!'),200);}else{speakWord(matchTarget,true);resetDrag();}}
 /******** Speech ***********/
