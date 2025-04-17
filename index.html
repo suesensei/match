@@ -33,7 +33,7 @@
   <h1>Picture‑Word Match</h1>
   <div id="modeBtns">
     <button id="practiceBtn">Practice Mode</button>
-    <button id="trialBtn">60‑s Trial Mode</button>
+    <button id="trialBtn">30‑Set Trial Mode</button>
   </div>
 </div>
 
@@ -46,19 +46,8 @@
   </div>
 </div>
 <script>
-/***** Data & Emoji (unchanged) *****/
-const categories={
-  Food:["apple","bread","milk","rice","egg","apples","eggs"],
-  Animals:["dog","cat","bird","fish","elephant","dogs","cats","birds","fish","elephants"],
-  School:["book","pen","pencil","chair","bag","books","pens","pencils","chairs","bags"],
-  Family:["mother","father","sister","brother","grandpa"],
-  Clothes:["shirt","shirts","pants","shoes","coat","coats","hat","hats"],
-  Colors:["red","blue","green","yellow","black","white","orange","purple","brown"],
-  Numbers:["one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve"],
-  Weather:["sunny","rainy","windy","cloudy","snowy"],
-  Actions:["I sleep.","I run.","I drink juice.","I brush my teeth.","I eat sushi."],
-  Feelings:["I am happy.","I am sad.","I am tired.","I am hungry.","I am angry."]
-};
+/***** Data (unchanged) *****/
+const categories={Food:["apple","bread","milk","rice","egg","apples","eggs"],Animals:["dog","cat","bird","fish","elephant","dogs","cats","birds","fish","elephants"],School:["book","pen","pencil","chair","bag","books","pens","pencils","chairs","bags"],Family:["mother","father","sister","brother","grandpa"],Clothes:["shirt","shirts","pants","shoes","coat","coats","hat","hats"],Colors:["red","blue","green","yellow","black","white","orange","purple","brown"],Numbers:["one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve"],Weather:["sunny","rainy","windy","cloudy","snowy"],Actions:["I sleep.","I run.","I drink juice.","I brush my teeth.","I eat sushi."],Feelings:["I am happy.","I am sad.","I am tired.","I am hungry.","I am angry."]};
 const emoji={apple:"🍎",apples:"🍎🍎",bread:"🍞",milk:"🥛",rice:"🍚",egg:"🥚",eggs:"🥚🥚",dog:"🐶",dogs:"🐶🐶",cat:"🐱",cats:"🐱🐱",bird:"🐦",birds:"🐦🐦",fish:"🐟",elephant:"🐘",elephants:"🐘🐘",book:"📕",books:"📕📕",pen:"🖊️",pens:"🖊️🖊️",pencil:"✏️",pencils:"✏️✏️",chair:"🪑",chairs:"🪑🪑",bag:"🎒",bags:"🎒🎒",mother:"👩",father:"👨",sister:"👧",brother:"👦",grandpa:"👴",shirt:"👕",shirts:"👕👕",pants:"👖",shoes:"👟👟",coat:"🧥",coats:"🧥🧥",hat:"🎩",hats:"🎩🎩",red:"🟥",blue:"🟦",green:"🟩",yellow:"🟨",black:"⬛",white:"⬜",orange:"🟧",purple:"🟪",brown:"🟫",one:"1️⃣",two:"2️⃣",three:"3️⃣",four:"4️⃣",five:"5️⃣",six:"6️⃣",seven:"7️⃣",eight:"8️⃣",nine:"9️⃣",ten:"🔟",eleven:"1️⃣1️⃣",twelve:"1️⃣2️⃣",sunny:"☀️",rainy:"🌧️",windy:"🌬️",cloudy:"☁️",snowy:"❄️","I sleep.":"😴","I run.":"🏃","I drink juice.":"🧃","I brush my teeth.":"🪥🦷","I eat sushi.":"🍣🥢","I am happy.":"😊","I am sad.":"😢","I am tired.":"🥱","I am hungry.":"🤤","I am angry.":"😠"};
 /***** Helpers *****/
 const noArt=["bread","milk","rice","pants","shoes",...categories.Colors,...categories.Numbers,...categories.Weather,...categories.Actions,...categories.Feelings];
@@ -74,35 +63,30 @@ const imgArea=document.getElementById('imageArea');
 const wordArea=document.getElementById('wordArea');
 const gameArea=document.getElementById('gameArea');
 /***** State *****/
-let mode='practice',currentCat='Food',score=0,remaining=60,timerId=null;
+let mode='practice',currentCat='Food',elapsed=0,timerId=null;
 let dragEl=null,startParent=null,offX=0,offY=0,pairsLeft=0;
 /***** Navigation *****/
-practiceBtn.addEventListener('click',()=>{mode='practice';currentCat='Food';initGame();});
-trialBtn.addEventListener('click',()=>{mode='trial';initGame();});
+practiceBtn.onclick=()=>{mode='practice';currentCat='Food';initGame();};
+trialBtn.onclick=()=>{mode='trial';initGame();};
 function initGame(){
-  startScr.style.display='none';
-  gameScr.style.display='flex';
+  startScr.style.display='none';gameScr.style.display='flex';
   clearInterval(timerId);
-  score=0;remaining=60;
+  elapsed=0;
   gameArea.classList.toggle('horizontal',mode==='trial');
   buildControls();
   buildBoard();
-  if(mode==='trial') startTimer();
+  if(mode==='trial') startStopwatch();
 }
 function goHome(){clearInterval(timerId);gameScr.style.display='none';startScr.style.display='block';}
 /***** Controls *****/
 function buildControls(){
   gameCtr.innerHTML='';
   if(mode==='practice'){
-    const sel=document.createElement('select');
-    Object.keys(categories).forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;sel.appendChild(o);});
-    sel.value=currentCat;
-    sel.onchange=e=>{currentCat=e.target.value;buildBoard();};
-    gameCtr.appendChild(sel);
+    const sel=document.createElement('select');Object.keys(categories).forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;sel.appendChild(o);});sel.value=currentCat;sel.onchange=e=>{currentCat=e.target.value;buildBoard();};gameCtr.appendChild(sel);
   } else {
-    const t=document.createElement('div');t.id='timer';t.textContent='60';gameCtr.appendChild(t);
+    const t=document.createElement('div');t.id='timer';t.textContent='0';gameCtr.appendChild(t);
   }
-  const back=document.createElement('button');back.textContent='Back';back.addEventListener('click',goHome);gameCtr.appendChild(back);
+  const back=document.createElement('button');back.textContent='Back';back.onclick=goHome;gameCtr.appendChild(back);
 }
 /***** Board *****/
 function buildBoard(){
@@ -110,67 +94,26 @@ function buildBoard(){
   if(mode==='practice'){
     words=[...categories[currentCat]];
   }else{
-    // Trial: randomly pick up to 60 pairs
-    const all=Object.values(categories).flat();
-    shuffle(all);
-    words=all.slice(0,60);
+    const all=Object.values(categories).flat();shuffle(all);words=all.slice(0,30); // 30 random
   }
   pairsLeft=words.length;
   imgArea.innerHTML='';wordArea.innerHTML='';
-  words.forEach(w=>{
-    const img=document.createElement('div');img.className='img-card';img.dataset.word=w;img.textContent=emoji[w]||w;imgArea.appendChild(img);});
+  words.forEach(w=>{const img=document.createElement('div');img.className='img-card';img.dataset.word=w;img.textContent=emoji[w]||w;imgArea.appendChild(img);});
   shuffle(words);
-  words.forEach(w=>{
-    const wc=document.createElement('div');wc.className='word-card';wc.dataset.word=w;wc.textContent=addArt(w);wc.addEventListener('pointerdown',pointerDown);wordArea.appendChild(wc);});
+  words.forEach(w=>{const wc=document.createElement('div');wc.className='word-card';wc.dataset.word=w;wc.textContent=addArt(w);wc.addEventListener('pointerdown',pointerDown);wordArea.appendChild(wc);});
 }
 /***** Drag *****/
-function pointerDown(e){
-  dragEl=e.currentTarget;startParent=dragEl.parentElement;
-  offX=dragEl.offsetWidth/2;offY=dragEl.offsetHeight/2;
-  dragEl.style.position='absolute';dragEl.style.zIndex='1000';
-  move(e.pageX,e.pageY);
-  dragEl.setPointerCapture(e.pointerId);
-  dragEl.addEventListener('pointermove',pointerMove);
-  dragEl.addEventListener('pointerup',pointerUp);
-}
+function pointerDown(e){dragEl=e.currentTarget;startParent=dragEl.parentElement;offX=dragEl.offsetWidth/2;offY=dragEl.offsetHeight/2;dragEl.style.position='absolute';dragEl.style.zIndex='1000';move(e.pageX,e.pageY);dragEl.setPointerCapture(e.pointerId);dragEl.addEventListener('pointermove',pointerMove);dragEl.addEventListener('pointerup',pointerUp);} 
 function pointerMove(e){if(!dragEl) return;move(e.pageX,e.pageY);} 
 function move(x,y){dragEl.style.left=x-offX+'px';dragEl.style.top=y-offY+'px';}
-function pointerUp(e){if(!dragEl) return;
-  dragEl.releasePointerCapture(e.pointerId);
-  dragEl.removeEventListener('pointermove',pointerMove);
-  dragEl.style.display='none';
-  const drop=document.elementFromPoint(e.clientX,e.clientY);
-  dragEl.style.display='';
-  let target=drop;
-  while(target&&!target.classList.contains('img-card')) target=target.parentElement;
-  target?handleMatch(target,dragEl.dataset.word):resetDrag();
-  dragEl=null;
-}
+function pointerUp(e){if(!dragEl) return;dragEl.releasePointerCapture(e.pointerId);dragEl.removeEventListener('pointermove',pointerMove);dragEl.style.display='none';const drop=document.elementFromPoint(e.clientX,e.clientY);dragEl.style.display='';let target=drop;while(target&&!target.classList.contains('img-card')) target=target.parentElement;target?handleMatch(target,dragEl.dataset.word):resetDrag();dragEl=null;}
 function resetDrag(){if(!dragEl) return;dragEl.style.position='relative';dragEl.style.left='';dragEl.style.top='';dragEl.style.zIndex='';startParent.appendChild(dragEl);} 
 /***** Match *****/
-function handleMatch(target,word){
-  if(word===target.dataset.word){
-    animate(target,true);
-    const pair=document.querySelector(`.word-card[data-word="${word}"]`);
-    pair.removeEventListener('pointerdown',pointerDown);
-    if(mode==='trial'){pair.style.display='none';target.style.display='none';score++;}
-    pairsLeft--;if(mode==='trial'&&pairsLeft===0) endTrial();
-  }else{animate(target,false);resetDrag();}
-}
+function handleMatch(target,word){if(word===target.dataset.word){animate(target,true);const pair=document.querySelector(`.word-card[data-word="${word}"]`);pair.removeEventListener('pointerdown',pointerDown);if(mode==='trial'){pair.style.display='none';target.style.display='none';}pairsLeft--;if(mode==='trial'&&pairsLeft===0) endTrial();}else{animate(target,false);resetDrag();}}
 function animate(el,ok){el.classList.add(ok?'correct-anim':'wrong-anim');setTimeout(()=>el.classList.remove(ok?'correct-anim':'wrong-anim'),350);} 
-/***** Timer *****/
-function startTimer(){
-  const timer=document.getElementById('timer');
-  timerId=setInterval(()=>{
-    remaining--;timer.textContent=remaining;
-    if(remaining<=0) endTrial();
-  },1000);
-}
-function endTrial(){
-  clearInterval(timerId);
-  alert(`Time up! Score: ${score}`);
-  goHome();
-}
+/***** Stopwatch *****/
+function startStopwatch(){const timer=document.getElementById('timer');timer.textContent='0';timerId=setInterval(()=>{elapsed++;timer.textContent=elapsed;},1000);} 
+function endTrial(){clearInterval(timerId);alert(`Finished 30 pairs in ${elapsed} seconds!`);goHome();}
 </script>
 </body>
 </html>
