@@ -13,8 +13,8 @@
   #gameControls{display:flex;justify-content:center;gap:12px;margin-bottom:16px;flex-wrap:wrap}
   #timer{font-weight:bold;font-size:1.1rem;color:#d32f2f;min-width:60px;text-align:center}
   #gameArea{display:flex;justify-content:center;align-items:flex-start;gap:32px;flex-wrap:wrap;margin:0 auto}
-  #gameArea.horizontal{flex-wrap:wrap}
-  .area{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:12px;width:550px;min-height:280px}
+  #gameArea.horizontal{flex-wrap:nowrap}/* side by side without wrap */
+  .area{display:grid;grid-template-columns:repeat(2,minmax(110px,1fr));gap:12px;width:550px;min-height:280px} /* fixed 2-column layout */
   .img-card,.word-card{width:110px;height:110px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-weight:bold;user-select:none;touch-action:none;transition:transform .25s}
   .img-card{font-size:2.4rem;background:#fff3e0;border:3px solid #ffb74d}
   .word-card{font-size:.9rem;background:#e3f2fd;border:3px solid #64b5f6;cursor:grab;padding:6px;text-align:center;line-height:1.15}
