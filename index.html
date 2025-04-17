@@ -89,7 +89,7 @@ function onPointerUp(e){
     resetDrag();
   }
   dragEl=null;
-}}
+}
 function resetDrag(){if(!dragEl) return;dragEl.style.position='relative';dragEl.style.left='';dragEl.style.top='';dragEl.style.zIndex='';startParent.appendChild(dragEl);} 
 
 function handleDrop(targetCard,word){if(word===targetCard.dataset.word){targetCard.classList.add('matched');const pair=document.querySelector(`.word-card[data-word="${word}"]`);pair.classList.add('matched');pair.removeEventListener('pointerdown',onPointerDown);pairsLeft--;speak(word);if(pairsLeft===0) setTimeout(()=>alert('Great! You matched all words!'),200);}else{resetDrag();speak(targetCard.dataset.word,true);}}
