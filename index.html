@@ -20,7 +20,7 @@
   .img-card{font-size:2.4rem;background:#fff3e0;border:3px solid #ffb74d}
   .word-card{font-size:.9rem;background:#e3f2fd;border:3px solid #64b5f6;cursor:grab;padding:6px;text-align:center;line-height:1.15}
   .matched{opacity:.35;cursor:default}
-  @keyframes flash{0%{background:#c8e6c9}100%{background:#fff3e0}}
+  @keyframes flash{from{background:#c8e6c9}to{background:#fff3e0}}
   @keyframes shake{10%,90%{transform:translateX(-4px)}20%,80%{transform:translateX(4px)}30%,50%,70%{transform:translateX(-4px)}40%,60%{transform:translateX(4px)}}
   .correct-anim{animation:flash .3s ease-out}
   .wrong-anim{animation:shake .35s ease-in-out}
@@ -106,7 +106,15 @@ function buildControls(){
 }
 /***** Board *****/
 function buildBoard(){
-  const words=mode==='practice'?categories[currentCat]:Object.values(categories).flat();
+  let words;
+  if(mode==='practice'){
+    words=[...categories[currentCat]];
+  }else{
+    // Trial: randomly pick up to 60 pairs
+    const all=Object.values(categories).flat();
+    shuffle(all);
+    words=all.slice(0,60);
+  }
   pairsLeft=words.length;
   imgArea.innerHTML='';wordArea.innerHTML='';
   words.forEach(w=>{
