@@ -63,7 +63,7 @@
       wordArea.innerHTML = "";
       const allWordsByCategory = {
         Food: ["apple", "bread", "milk", "rice", "egg", "apples", "eggs"],
-        Animals: ["dog", "cat", "bird", "elephant", "dogs", "cats", "birds", "elephants"],
+        Animals: ["dog", "cat", "bird", "elephant", "dogs", "cats", "birds", "fish", "elephants"],
         School: ["book", "pen", "pencil", "chair", "bag", "books", "pens", "pencils", "chairs", "bags"],
         Family: ["mother", "father", "sister", "brother", "grandpa"],
         Clothes: ["shirt", "shirts", "pants", "shoes", "coat", "coats", "hat", "hats"],
@@ -90,7 +90,7 @@ shuffledWords.forEach(word => {
   red: "🟥", blue: "🟦", green: "🟩", yellow: "🟨", black: "⬛", white: "⬜", orange: "🟧", purple: "🟪", brown: "🟫",
   one: "1️⃣", two: "2️⃣", three: "3️⃣", four: "4️⃣", five: "5️⃣", six: "6️⃣", seven: "7️⃣", eight: "8️⃣", nine: "9️⃣", ten: "🔟", eleven: "1️⃣1️⃣", twelve: "1️⃣2️⃣",
   sunny: "☀️", rainy: "🌧️", windy: "🌬️", cloudy: "☁️", snowy: "❄️",
-  "I sleep.": "😴", "I run.": "🏃", "I drink juice.": "🧃", "I brush my teeth.": "🪥🦷🦷", "I eat sushi.": "🍣🥢",
+  "I sleep.": "😴", "I run.": "🏃", "I drink juice.": "🧃", "I brush my teeth.": "🪥🦷", "I eat sushi.": "🍣🥢",
   "I am happy.": "😊", "I am sad.": "😢", "I am tired.": "🥱", "I am hungry.": "🤤", "I am angry.": "😠"
 };
 img.textContent = emojiMap[word] || word;
@@ -221,6 +221,92 @@ function addArticle(word) {
         timer.textContent = `Time: ${elapsed}s`;
       }, 500);
     }
-  </script>
+  
+let availableVoices = [];
+
+function initVoices() {
+  return new Promise(resolve => {
+    const voices = speechSynthesis.getVoices();
+    if (voices.length) {
+      availableVoices = voices;
+      resolve();
+    } else {
+      speechSynthesis.onvoiceschanged = () => {
+        availableVoices = speechSynthesis.getVoices();
+        resolve();
+      };
+    }
+  });
+}
+
+async function speak(text) {
+  if (!('speechSynthesis' in window)) return;
+
+  await initVoices();
+
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = 'en-US';
+
+  const enVoice = availableVoices.find(v => v.lang === 'en-US' || v.lang.startsWith('en'));
+  if (enVoice) utterance.voice = enVoice;
+
+  speechSynthesis.cancel();
+  speechSynthesis.speak(utterance);
+}
+
+let touchCard = null;
+
+document.addEventListener('touchstart', e => {
+  const target = e.target.closest('.word-card');
+  if (!target || target.classList.contains('matched')) return;
+  touchCard = target.cloneNode(true);
+  draggedWord = target.dataset.word;
+  touchCard.style.position = 'absolute';
+  touchCard.style.pointerEvents = 'none';
+  touchCard.style.zIndex = 1000;
+  touchCard.style.opacity = 0.7;
+  touchCard.style.width = target.offsetWidth + 'px';
+  touchCard.style.height = target.offsetHeight + 'px';
+  touchCard.style.lineHeight = getComputedStyle(target).lineHeight;
+  touchCard.style.fontSize = getComputedStyle(target).fontSize;
+  touchCard.style.padding = getComputedStyle(target).padding;
+  document.body.appendChild(touchCard);
+  speak(addArticle(draggedWord));
+});
+
+document.addEventListener('touchmove', e => {
+  if (!touchCard || !e.touches.length) return;
+  const touch = e.touches[0];
+  touchCard.style.left = touch.pageX - touchCard.offsetWidth / 2 + 'px';
+  touchCard.style.top = touch.pageY - touchCard.offsetHeight / 2 + 'px';
+});
+
+document.addEventListener('touchend', e => {
+  if (!touchCard) return;
+  const dropTarget = document.elementFromPoint(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+  const imgCard = dropTarget?.closest('.img-card');
+  if (imgCard && imgCard.dataset.word === draggedWord) {
+    imgCard.classList.add("matched", "correct-anim");
+    const match = document.querySelector(`.word-card[data-word="${draggedWord}"]`);
+    if (match) match.classList.add("matched", "correct-anim");
+    setTimeout(() => {
+      imgCard.style.display = "none";
+      if (match) match.style.display = "none";
+      const remaining = document.querySelectorAll('.img-card:not([style*="display: none"])').length;
+      if (remaining === 0 && document.getElementById("timer").style.display === "inline") {
+        clearInterval(window.timerInterval);
+        const seconds = document.getElementById("timer").textContent.replace('Time: ', '').replace('s', '');
+        speak(`${seconds} seconds! Congratulations!`);
+      }
+    }, 200);
+  } else if (imgCard) {
+    imgCard.classList.add("wrong-anim");
+    setTimeout(() => imgCard.classList.remove("wrong-anim"), 350);
+  }
+  touchCard.remove();
+  touchCard = null;
+});
+
+</script>
 </body>
 </html>
