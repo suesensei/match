@@ -3,27 +3,48 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Picture‑Word Match</title>
+  <title>Picture-Word Match</title>
   <style>
+    /* --- 省略なし。元CSSそのまま --- */
     * { box-sizing: border-box; font-family: Arial, Helvetica, sans-serif; }
     body { margin: 0; background: #f0f8ff; }
+
     #container { display: flex; flex-direction: column; align-items: center; padding: 20px; }
     h1 { margin-bottom: 20px; }
-    button { cursor: pointer; border: none; border-radius: 8px; padding: 10px 18px; font-size: 1rem; background: #2196f3; color: #fff; }
+
+    button { cursor: pointer; border: none; border-radius: 8px; padding: 10px 18px;
+             font-size: 1rem; background: #2196f3; color: #fff; }
+
     #modeBtns { display: flex; gap: 20px; }
-    #gameControls { display: flex; gap: 12px; margin-bottom: 16px; justify-content: center; width: 100%; padding: 10px; flex-wrap: wrap; }
+
+    #gameControls { display: flex; gap: 12px; margin-bottom: 16px;
+                    justify-content: center; width: 100%; padding: 10px; flex-wrap: wrap; }
     #timer { font-weight: bold; font-size: 1.1rem; color: #d32f2f; }
+
     #gameArea { display: flex; width: 100%; max-width: 1200px; }
     #gameArea.horizontal { flex-wrap: nowrap; }
+
     .area { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; width: 50%; padding: 0 10px; }
-    .img-card, .word-card { width: 100%; height: 100px; border-radius: 12px; display: flex; align-items: center; justify-content: center; user-select: none; touch-action: none; transition: transform .25s; }
-    .img-card { font-size: 2.2rem; background: #fff3e0; border: 3px solid #ffb74d; }
-    .word-card { font-size: .9rem; background: #e3f2fd; border: 3px solid #64b5f6; cursor: grab; padding: 6px; text-align: center; line-height: 1.15; }
+
+    .img-card, .word-card { width: 100%; height: 100px; border-radius: 12px;
+                            display: flex; align-items: center; justify-content: center;
+                            user-select: none; touch-action: none; transition: transform .25s; }
+
+    .img-card  { font-size: 2.2rem; background: #fff3e0; border: 3px solid #ffb74d; }
+    .word-card { font-size: .9rem; background: #e3f2fd; border: 3px solid #64b5f6;
+                 cursor: grab; padding: 6px; text-align: center; line-height: 1.15; }
+
     .matched { opacity: .35; cursor: default; }
+
     @keyframes flash { from { background: #c8e6c9; } to { background: #fff3e0; } }
-    @keyframes shake { 10%,90%{transform:translateX(-4px)}20%,80%{transform:translateX(4px)}30%,50%,70%{transform:translateX(-4px)}40%,60%{transform:translateX(4px)} }
+    @keyframes shake { 10%,90%{transform:translateX(-4px)}
+                       20%,80%{transform:translateX(4px)}
+                       30%,50%,70%{transform:translateX(-4px)}
+                       40%,60%{transform:translateX(4px)} }
+
     .correct-anim { animation: flash .3s ease-out; }
-    .wrong-anim { animation: shake .35s ease-in-out; }
+    .wrong-anim   { animation: shake .35s ease-in-out; }
+
     @media (max-width: 480px) {
       #gameArea { flex-wrap: wrap; }
       .area { width: 100%; max-width: 100%; grid-template-columns: repeat(2, 1fr); gap: 8px; }
@@ -34,279 +55,263 @@
   </style>
 </head>
 <body>
-  <div id="container">
-    <div id="startScreen">
-      <h1>Picture‑Word Match</h1>
-      <div id="modeBtns">
-        <button id="practiceBtn">Practice Mode</button>
-        <button id="trialBtn">30‑Set Trial Mode</button>
-      </div>
-    </div>
-    <div id="gameScreen" style="display:none; width:100%; flex-direction:column; align-items:center;">
-      <div id="gameControls">
-        <select id="categorySelect"></select>
-        <button id="startCategoryBtn">Start</button>
-        <button id="backBtn">Back</button>
-        <span id="timer" style="display:none; margin-left: 20px; font-weight: bold; font-size: 1.2rem; color: #d32f2f;"></span>
-      </div>
-      <div id="gameArea">
-        <div id="imageArea" class="area"></div>
-        <div id="wordArea" class="area"></div>
-      </div>
+<div id="container">
+
+  <!-- ===== スタート画面 ===== -->
+  <div id="startScreen">
+    <h1>Picture-Word Match</h1>
+    <div id="modeBtns">
+      <button id="practiceBtn">Practice Mode</button>
+      <button id="trialBtn">30-Set Trial Mode</button>
     </div>
   </div>
-  <script>
-    function buildBoard(mode) {
-      const imageArea = document.getElementById("imageArea");
-      const wordArea = document.getElementById("wordArea");
-      imageArea.innerHTML = "";
-      wordArea.innerHTML = "";
-      const allWordsByCategory = {
-        Food: ["apple", "bread", "milk", "rice", "egg", "apples", "eggs"],
-        Animals: ["dog", "cat", "bird", "elephant", "dogs", "cats", "birds", "elephants"],
-        School: ["book", "pen", "pencil", "chair", "bag", "books", "pens", "pencils", "chairs", "bags"],
-        Family: ["mother", "father", "sister", "brother", "grandpa"],
-        Clothes: ["shirt", "shirts", "pants", "shoes", "coat", "coats", "hat", "hats"],
-        Colors: ["red", "blue", "green", "yellow", "black", "white", "orange", "purple", "brown"],
-        Numbers: ["one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"],
-        Weather: ["sunny", "rainy", "windy", "cloudy", "snowy"],
-        Actions: ["I sleep.", "I run.", "I drink juice.", "I brush my teeth.", "I eat sushi."],
-        Feelings: ["I am happy.", "I am sad.", "I am tired.", "I am hungry.", "I am angry."]
-      };
-      const allWords = Object.values(allWordsByCategory).flat();
-      const words = mode === "trial"
-        ? allWords.sort(() => 0.5 - Math.random()).slice(0, 30)
-        : allWordsByCategory[document.getElementById("categorySelect").value];
-      const shuffledWords = [...words].sort(() => 0.5 - Math.random());
-shuffledWords.forEach(word => {
-        const img = document.createElement("div");
-        img.className = "img-card";
-        const emojiMap = {
-  apple: "🍎", apples: "🍎🍎", bread: "🍞", milk: "🥛", rice: "🍚", egg: "🥚", eggs: "🥚🥚",
-  dog: "🐶", dogs: "🐶🐶", cat: "🐱", cats: "🐱🐱", bird: "🐦", birds: "🐦🐦",  elephant: "🐘", elephants: "🐘🐘",
-  book: "📕", books: "📕📕", pen: "🖊️", pens: "🖊️🖊️", pencil: "✏️", pencils: "✏️✏️", chair: "🪑", chairs: "🪑🪑", bag: "🎒", bags: "🎒🎒",
-  mother: "👩", father: "👨", sister: "👧", brother: "👦", grandpa: "👴",
-  shirt: "👕", shirts: "👕👕", pants: "👖", shoes: "👟👟", coat: "🧥", coats: "🧥🧥", hat: "🎩", hats: "🎩🎩",
-  red: "🟥", blue: "🟦", green: "🟩", yellow: "🟨", black: "⬛", white: "⬜", orange: "🟧", purple: "🟪", brown: "🟫",
-  one: "1️⃣", two: "2️⃣", three: "3️⃣", four: "4️⃣", five: "5️⃣", six: "6️⃣", seven: "7️⃣", eight: "8️⃣", nine: "9️⃣", ten: "🔟", eleven: "1️⃣1️⃣", twelve: "1️⃣2️⃣",
-  sunny: "☀️", rainy: "🌧️", windy: "🌬️", cloudy: "☁️", snowy: "❄️",
-  "I sleep.": "😴", "I run.": "🏃", "I drink juice.": "🧃", "I brush my teeth.": "🪥🦷🦷", "I eat sushi.": "🍣🥢",
-  "I am happy.": "😊", "I am sad.": "😢", "I am tired.": "🥱", "I am hungry.": "🤤", "I am angry.": "😠"
-};
-img.textContent = emojiMap[word] || word;
-        img.dataset.word = word;
-        img.addEventListener("dragover", e => e.preventDefault());
-        img.addEventListener("drop", handleDrop);
-        imageArea.appendChild(img);
-      });
-      const shuffledWords2 = [...words].sort(() => 0.5 - Math.random());
-shuffledWords2.forEach(word => {
-        const card = document.createElement("div");
-        card.className = "word-card";
-        card.textContent = addArticle(word);
-        card.dataset.word = word;
-        card.draggable = true;
-        card.addEventListener("dragstart", e => {
-  draggedWord = e.target.dataset.word;
-  speak(addArticle(word));
-});
-        wordArea.appendChild(card);
-      });
-    }
 
-    let draggedWord = null;
-let currentCat = "Food";
+  <!-- ===== ゲーム画面 ===== -->
+  <div id="gameScreen" style="display:none; width:100%; flex-direction:column; align-items:center;">
+    <div id="gameControls">
+      <select id="categorySelect"></select>
+      <button id="startCategoryBtn">Start</button>
+      <button id="backBtn">Back</button>
+      <span id="timer" style="display:none; margin-left:20px; font-weight:bold; font-size:1.2rem; color:#d32f2f;"></span>
+    </div>
 
+    <div id="gameArea">
+      <div id="imageArea" class="area"></div>
+      <div id="wordArea"  class="area"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ====================== 共通変数 ====================== */
+let draggedWord = null;
+let touchClone = null;
+let timerInterval = null;
+
+/* ====================== 音声再生ユーティリティ ====================== */
+/* --- iOSでの“ロック”解除用。最初のユーザー操作で一度だけ実行 --- */
+function unlockAudio() {
+  if (window._audioUnlocked) return;
+  window._audioUnlocked = true;
+  const dummy = new SpeechSynthesisUtterance('ready');
+  dummy.lang = 'en-US';
+  speechSynthesis.speak(dummy);
+}
+document.addEventListener('click', unlockAudio, {once:true});
+document.addEventListener('touchstart', unlockAudio, {once:true});
+
+/* --- 単純で同期的な speak() --- */
 function speak(text) {
-  if ('speechSynthesis' in window) {
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = 'en-US';
-    speechSynthesis.cancel();
-    speechSynthesis.speak(utterance);
-  }
+  if (!('speechSynthesis' in window)) return;
+
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = 'en-US';
+
+  /* 利用可能な英語音声を優先使用（例: Samantha） */
+  const enVoice = speechSynthesis.getVoices().find(v =>
+      v.lang && v.lang.startsWith('en') && /Samantha|Karen|Daniel|Fred/i.test(v.name));
+  if (enVoice) utter.voice = enVoice;
+
+  speechSynthesis.cancel();
+  speechSynthesis.speak(utter);
 }
 
+/* ====================== 便利関数 ====================== */
 function addArticle(word) {
-  const noArticleWords = [
-    "bread", "milk", "rice", "pants", "shoes",
-    "I sleep.", "I run.", "I drink juice.", "I brush my teeth.", "I eat sushi.",
-    "I am happy.", "I am sad.", "I am tired.", "I am hungry.", "I am angry.",
-    "red", "blue", "green", "yellow", "black", "white", "orange", "purple", "brown",
-    "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve",
-    "sunny", "rainy", "windy", "cloudy", "snowy"
+  const noArticle = [
+    "bread","milk","rice","pants","shoes",
+    "I sleep.","I run.","I drink juice.","I brush my teeth.","I eat sushi.",
+    "I am happy.","I am sad.","I am tired.","I am hungry.","I am angry.",
+    "red","blue","green","yellow","black","white","orange","purple","brown",
+    "one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve",
+    "sunny","rainy","windy","cloudy","snowy"
   ];
-  if (noArticleWords.includes(word) || word.endsWith("s")) return word;
+  if (noArticle.includes(word) || word.endsWith('s')) return word;
   return /^[aeiou]/i.test(word) ? `an ${word}` : `a ${word}`;
 }
 
-    function handleDrop(e) {
-      const target = e.currentTarget;
-      if (target.dataset.word === draggedWord) {
-        target.classList.add("matched", "correct-anim");
-        const match = document.querySelector(`.word-card[data-word="${draggedWord}"]`);
-        if (match) match.classList.add("matched", "correct-anim");
-        if (document.getElementById("timer").style.display === "inline") {
-          setTimeout(() => {
-        target.style.display = "none";
-        if (match) match.style.display = "none";
+/* ====================== ゲームボード構築 ====================== */
+function buildBoard(mode) {
+  const imageArea = document.getElementById('imageArea');
+  const wordArea  = document.getElementById('wordArea');
+  imageArea.innerHTML = '';
+  wordArea.innerHTML  = '';
 
-        // Check if all cards matched in trial mode
-        const remaining = document.querySelectorAll('.img-card:not([style*="display: none"])').length;
-        if (remaining === 0) {
-          clearInterval(window.timerInterval);
-          const timeText = document.getElementById("timer").textContent;
-          const seconds = timeText.replace('Time: ', '').replace('s', '');
-          speak(`${seconds} seconds! Congratulations!`);
-        }
-      }, 200);
-        }
-      } else {
-        target.classList.add("wrong-anim");
-        setTimeout(() => target.classList.remove("wrong-anim"), 350);
-      }
-    }
+  const allWordsByCat = {
+    Food: ["apple","bread","milk","rice","egg","apples","eggs"],
+    Animals: ["dog","cat","bird","elephant","dogs","cats","birds","elephants"],
+    School: ["book","pen","pencil","chair","bag","books","pens","pencils","chairs","bags"],
+    Family: ["mother","father","sister","brother","grandpa"],
+    Clothes: ["shirt","shirts","pants","shoes","coat","coats","hat","hats"],
+    Colors: ["red","blue","green","yellow","black","white","orange","purple","brown"],
+    Numbers: ["one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve"],
+    Weather: ["sunny","rainy","windy","cloudy","snowy"],
+    Actions: ["I sleep.","I run.","I drink juice.","I brush my teeth.","I eat sushi."],
+    Feelings: ["I am happy.","I am sad.","I am tired.","I am hungry.","I am angry."]
+  };
 
-    document.addEventListener("DOMContentLoaded", () => {
-      document.getElementById("practiceBtn").addEventListener("click", () => startGame("practice"));
-      document.getElementById("trialBtn").addEventListener("click", () => startGame("trial"));
+  const allWords = Object.values(allWordsByCat).flat();
+  const selected  = mode === 'trial'
+      ? allWords.sort(()=>0.5-Math.random()).slice(0,30)
+      : allWordsByCat[document.getElementById('categorySelect').value];
 
-      const sel = document.getElementById("categorySelect");
-      const categories = ["Food", "Animals", "School", "Family", "Clothes", "Colors", "Numbers", "Weather", "Actions", "Feelings"];
-      categories.forEach(category => {
-        const option = document.createElement("option");
-        option.value = category;
-        option.textContent = category;
-        sel.appendChild(option);
-      });
-      sel.value = categories[0];
+  /* --- 画像側（絵文字カード） --- */
+  selected.sort(()=>0.5-Math.random()).forEach(word=>{
+    const img = document.createElement('div');
+    img.className = 'img-card';
+    const emoji = {
+      apple:"🍎",apples:"🍎🍎",bread:"🍞",milk:"🥛",rice:"🍚",egg:"🥚",eggs:"🥚🥚",
+      dog:"🐶",dogs:"🐶🐶",cat:"🐱",cats:"🐱🐱",bird:"🐦",birds:"🐦🐦",elephant:"🐘",elephants:"🐘🐘",
+      book:"📕",books:"📕📕",pen:"🖊️",pens:"🖊️🖊️",pencil:"✏️",pencils:"✏️✏️",chair:"🪑",chairs:"🪑🪑",bag:"🎒",bags:"🎒🎒",
+      mother:"👩",father:"👨",sister:"👧",brother:"👦",grandpa:"👴",
+      shirt:"👕",shirts:"👕👕",pants:"👖",shoes:"👟👟",coat:"🧥",coats:"🧥🧥",hat:"🎩",hats:"🎩🎩",
+      red:"🟥",blue:"🟦",green:"🟩",yellow:"🟨",black:"⬛",white:"⬜",orange:"🟧",purple:"🟪",brown:"🟫",
+      one:"1️⃣",two:"2️⃣",three:"3️⃣",four:"4️⃣",five:"5️⃣",six:"6️⃣",seven:"7️⃣",eight:"8️⃣",nine:"9️⃣",ten:"🔟",eleven:"1️⃣1️⃣",twelve:"1️⃣2️⃣",
+      sunny:"☀️",rainy:"🌧️",windy:"🌬️",cloudy:"☁️",snowy:"❄️",
+      "I sleep.":"😴","I run.":"🏃","I drink juice.":"🧃","I brush my teeth.":"🪥🦷","I eat sushi.":"🍣🥢",
+      "I am happy.":"😊","I am sad.":"😢","I am tired.":"🥱","I am hungry.":"🤤","I am angry.":"😠"
+    };
+    img.textContent = emoji[word] || word;
+    img.dataset.word = word;
+    img.addEventListener('dragover', e=>e.preventDefault());
+    img.addEventListener('drop', handleDrop);
+    imageArea.appendChild(img);
+  });
 
-      document.getElementById("startCategoryBtn").addEventListener("click", () => {
-        currentCat = sel.value;
-        buildBoard("practice");
-      });
+  /* --- 単語側（ドラッグカード） --- */
+  selected.sort(()=>0.5-Math.random()).forEach(word=>{
+    const card = document.createElement('div');
+    card.className = 'word-card';
+    card.textContent = addArticle(word);
+    card.dataset.word = word;
+    card.draggable = true;
 
-      document.getElementById("backBtn").addEventListener("click", () => {
-        document.getElementById("gameScreen").style.display = "none";
-        document.getElementById("startScreen").style.display = "block";
-      });
+    /* マウス向け */
+    card.addEventListener('dragstart', e=>{
+      draggedWord = word;
+      speak(addArticle(word));
     });
-
-    function startGame(mode) {
-      document.getElementById("startScreen").style.display = "none";
-      document.getElementById("gameScreen").style.display = "flex";
-
-      const categorySelect = document.getElementById("categorySelect");
-      const startCategoryBtn = document.getElementById("startCategoryBtn");
-      const timer = document.getElementById("timer");
-
-      if (mode === "trial") {
-        categorySelect.style.display = "none";
-        startCategoryBtn.style.display = "none";
-        timer.style.display = "inline";
-        startTimer();
-        buildBoard("trial");
-      } else {
-        categorySelect.style.display = "inline";
-        startCategoryBtn.style.display = "inline";
-        timer.style.display = "none";
-      }
-    }
-
-    function startTimer() {
-      const timer = document.getElementById("timer");
-      let startTime = Date.now();
-      clearInterval(window.timerInterval);
-      window.timerInterval = setInterval(() => {
-        const elapsed = Math.floor((Date.now() - startTime) / 1000);
-        timer.textContent = `Time: ${elapsed}s`;
-      }, 500);
-    }
-  
-let availableVoices = [];
-
-function initVoices() {
-  return new Promise(resolve => {
-    const voices = speechSynthesis.getVoices();
-    if (voices.length) {
-      availableVoices = voices;
-      resolve();
-    } else {
-      speechSynthesis.onvoiceschanged = () => {
-        availableVoices = speechSynthesis.getVoices();
-        resolve();
-      };
-    }
+    wordArea.appendChild(card);
   });
 }
 
-async function speak(text) {
-  if (!('speechSynthesis' in window)) return;
+/* ====================== ドロップ処理 ====================== */
+function handleDrop(e) {
+  const target = e.currentTarget;
+  if (target.dataset.word === draggedWord) {
+    target.classList.add('matched','correct-anim');
+    const match = document.querySelector(`.word-card[data-word="${draggedWord}"]`);
+    if (match) match.classList.add('matched','correct-anim');
 
-  await initVoices();
+    setTimeout(()=>{ target.style.display='none'; match && (match.style.display='none'); },200);
 
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = 'en-US';
-
-  const enVoice = availableVoices.find(v => v.lang === 'en-US' || v.lang.startsWith('en'));
-  if (enVoice) utterance.voice = enVoice;
-
-  speechSynthesis.cancel();
-  speechSynthesis.speak(utterance);
+    /* タイム計測終了判定（Trial モード） */
+    if (document.getElementById('timer').style.display==='inline') {
+      const remaining = document.querySelectorAll('.img-card:not([style*="display: none"])').length;
+      if (!remaining) {
+        clearInterval(timerInterval);
+        const sec = document.getElementById('timer').textContent.replace('Time: ','').replace('s','');
+        speak(`${sec} seconds! Congratulations!`);
+      }
+    }
+  } else {
+    target.classList.add('wrong-anim');
+    setTimeout(()=>target.classList.remove('wrong-anim'),350);
+  }
 }
 
-let touchCard = null;
+/* ====================== タッチデバイス向け独自ドラッグ ====================== */
+document.addEventListener('touchstart', e=>{
+  const base = e.target.closest('.word-card');
+  if (!base || base.classList.contains('matched')) return;
 
-document.addEventListener('touchstart', e => {
-  const target = e.target.closest('.word-card');
-  if (!target || target.classList.contains('matched')) return;
-  touchCard = target.cloneNode(true);
-  draggedWord = target.dataset.word;
-  touchCard.style.position = 'absolute';
-  touchCard.style.pointerEvents = 'none';
-  touchCard.style.zIndex = 1000;
-  touchCard.style.opacity = 0.7;
-  touchCard.style.width = target.offsetWidth + 'px';
-  touchCard.style.height = target.offsetHeight + 'px';
-  touchCard.style.lineHeight = getComputedStyle(target).lineHeight;
-  touchCard.style.fontSize = getComputedStyle(target).fontSize;
-  touchCard.style.padding = getComputedStyle(target).padding;
-  document.body.appendChild(touchCard);
+  draggedWord = base.dataset.word;
   speak(addArticle(draggedWord));
+
+  touchClone = base.cloneNode(true);
+  touchClone.style.position='absolute';
+  touchClone.style.pointerEvents='none';
+  touchClone.style.zIndex=1000;
+  touchClone.style.opacity=0.7;
+  touchClone.style.width=base.offsetWidth+'px';
+  touchClone.style.height=base.offsetHeight+'px';
+  touchClone.style.lineHeight=getComputedStyle(base).lineHeight;
+  touchClone.style.fontSize=getComputedStyle(base).fontSize;
+  touchClone.style.padding=getComputedStyle(base).padding;
+  document.body.appendChild(touchClone);
 });
 
-document.addEventListener('touchmove', e => {
-  if (!touchCard || !e.touches.length) return;
-  const touch = e.touches[0];
-  touchCard.style.left = touch.pageX - touchCard.offsetWidth / 2 + 'px';
-  touchCard.style.top = touch.pageY - touchCard.offsetHeight / 2 + 'px';
+document.addEventListener('touchmove', e=>{
+  if (!touchClone || !e.touches.length) return;
+  const t = e.touches[0];
+  touchClone.style.left = (t.pageX - touchClone.offsetWidth/2)+'px';
+  touchClone.style.top  = (t.pageY - touchClone.offsetHeight/2)+'px';
 });
 
-document.addEventListener('touchend', e => {
-  if (!touchCard) return;
-  const dropTarget = document.elementFromPoint(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
-  const imgCard = dropTarget?.closest('.img-card');
-  if (imgCard && imgCard.dataset.word === draggedWord) {
-    imgCard.classList.add("matched", "correct-anim");
-    const match = document.querySelector(`.word-card[data-word="${draggedWord}"]`);
-    if (match) match.classList.add("matched", "correct-anim");
-    setTimeout(() => {
-      imgCard.style.display = "none";
-      if (match) match.style.display = "none";
-      const remaining = document.querySelectorAll('.img-card:not([style*="display: none"])').length;
-      if (remaining === 0 && document.getElementById("timer").style.display === "inline") {
-        clearInterval(window.timerInterval);
-        const seconds = document.getElementById("timer").textContent.replace('Time: ', '').replace('s', '');
-        speak(`${seconds} seconds! Congratulations!`);
-      }
-    }, 200);
-  } else if (imgCard) {
-    imgCard.classList.add("wrong-anim");
-    setTimeout(() => imgCard.classList.remove("wrong-anim"), 350);
+document.addEventListener('touchend', e=>{
+  if (!touchClone) return;
+  const dropEl = document.elementFromPoint(
+      e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+  const img = dropEl && dropEl.closest('.img-card');
+  if (img) handleDrop({currentTarget:img});   /* 疑似的に drop 実行 */
+  touchClone.remove();
+  touchClone = null;
+});
+
+/* ====================== ゲーム開始・タイマー ====================== */
+function startGame(mode) {
+  document.getElementById('startScreen').style.display='none';
+  const gameScreen = document.getElementById('gameScreen');
+  gameScreen.style.display='flex';
+
+  const catSel = document.getElementById('categorySelect');
+  const startBtn= document.getElementById('startCategoryBtn');
+  const timerEl = document.getElementById('timer');
+
+  if (mode==='trial') {
+    catSel.style.display='none';
+    startBtn.style.display='none';
+    timerEl.style.display='inline';
+    startTimer();
+    buildBoard('trial');
+  } else {
+    catSel.style.display='inline';
+    startBtn.style.display='inline';
+    timerEl.style.display='none';
   }
-  touchCard.remove();
-  touchCard = null;
-});
+}
 
+function startTimer() {
+  const timerEl = document.getElementById('timer');
+  const startTime = Date.now();
+  timerInterval && clearInterval(timerInterval);
+  timerInterval = setInterval(()=>{
+    const sec = Math.floor((Date.now()-startTime)/1000);
+    timerEl.textContent=`Time: ${sec}s`;
+  },500);
+}
+
+/* ====================== 初期化 ====================== */
+document.addEventListener('DOMContentLoaded',()=>{
+  /* --- ボタン --- */
+  document.getElementById('practiceBtn').addEventListener('click',()=>startGame('practice'));
+  document.getElementById('trialBtn')   .addEventListener('click',()=>startGame('trial'));
+  document.getElementById('backBtn')    .addEventListener('click',()=>{
+    document.getElementById('gameScreen').style.display='none';
+    document.getElementById('startScreen').style.display='block';
+  });
+  document.getElementById('startCategoryBtn').addEventListener('click', ()=>buildBoard('practice'));
+
+  /* --- カテゴリー選択肢作成 --- */
+  const sel = document.getElementById('categorySelect');
+  ["Food","Animals","School","Family","Clothes","Colors","Numbers","Weather","Actions","Feelings"]
+    .forEach(cat=>{
+      const opt = document.createElement('option');
+      opt.value = opt.textContent = cat;
+      sel.appendChild(opt);
+    });
+});
 </script>
 </body>
 </html>
