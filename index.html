@@ -1,53 +1,53 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Picture-Word Match</title>
-<style>
-/* ===== レイアウト ===== */
-*{box-sizing:border-box;font-family:Arial,Helvetica,sans-serif}
-body{margin:0;background:#f0f8ff}
-#container{display:flex;flex-direction:column;align-items:center;padding:20px}
-h1{margin-bottom:20px}
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>Picture-Word Match</title>
+  <style>
+    /* ===== レイアウト ===== */
+    *{box-sizing:border-box;font-family:Arial,Helvetica,sans-serif}
+    body{margin:0;background:#f0f8ff}
+    #container{display:flex;flex-direction:column;align-items:center;padding:20px}
+    h1{margin-bottom:20px}
 
-/* ===== ボタン／UI ===== */
-button{cursor:pointer;border:none;border-radius:8px;padding:10px 18px;
-       font-size:1rem;background:#2196f3;color:#fff}
-#modeBtns{display:flex;gap:20px}
-#gameControls{display:flex;gap:12px;margin-bottom:16px;justify-content:center;
-              width:100%;padding:10px;flex-wrap:wrap}
-#timer{font-weight:bold;font-size:1.1rem;color:#d32f2f}
+    /* ===== ボタン／UI ===== */
+    button{cursor:pointer;border:none;border-radius:8px;padding:10px 18px;
+           font-size:1rem;background:#2196f3;color:#fff}
+    #modeBtns{display:flex;gap:20px}
+    #gameControls{display:flex;gap:12px;margin-bottom:16px;justify-content:center;
+                  width:100%;padding:10px;flex-wrap:wrap}
+    #timer{font-weight:bold;font-size:1.1rem;color:#d32f2f}
 
-/* ===== ゲームエリア ===== */
-#gameArea{display:flex;width:100%;max-width:1200px}
-.area{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;width:50%;padding:0 10px}
-.img-card,.word-card{width:100%;height:100px;border-radius:12px;display:flex;
-                     align-items:center;justify-content:center;user-select:none;
-                     touch-action:none;transition:transform .25s}
-.img-card{font-size:2.2rem;background:#fff3e0;border:3px solid #ffb74d}
-.word-card{font-size:.9rem;background:#e3f2fd;border:3px solid #64b5f6;
-           cursor:grab;padding:6px;text-align:center;line-height:1.15}
-.matched{opacity:.35;cursor:default}
+    /* ===== ゲームエリア ===== */
+    #gameArea{display:flex;width:100%;max-width:1200px}
+    .area{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;width:50%;padding:0 10px}
+    .img-card,.word-card{width:100%;height:100px;border-radius:12px;display:flex;
+                         align-items:center;justify-content:center;user-select:none;
+                         touch-action:none;transition:transform .25s}
+    .img-card{font-size:2.2rem;background:#fff3e0;border:3px solid #ffb74d}
+    .word-card{font-size:.9rem;background:#e3f2fd;border:3px solid #64b5f6;
+               cursor:grab;padding:6px;text-align:center;line-height:1.15}
+    .matched{opacity:.35;cursor:default}
 
-/* ===== アニメーション ===== */
-@keyframes flash{from{background:#c8e6c9}to{background:#fff3e0}}
-@keyframes shake{10%,90%{transform:translateX(-4px)}
-                 20%,80%{transform:translateX(4px)}
-                 30%,50%,70%{transform:translateX(-4px)}
-                 40%,60%{transform:translateX(4px)}}
-.correct-anim{animation:flash .3s}
-.wrong-anim{animation:shake .35s}
+    /* ===== アニメーション ===== */
+    @keyframes flash{from{background:#c8e6c9}to{background:#fff3e0}}
+    @keyframes shake{10%,90%{transform:translateX(-4px)}
+                     20%,80%{transform:translateX(4px)}
+                     30%,50%,70%{transform:translateX(-4px)}
+                     40%,60%{transform:translateX(4px)}}
+    .correct-anim{animation:flash .3s}
+    .wrong-anim{animation:shake .35s}
 
-/* ===== スマホレイアウト ===== */
-@media(max-width:480px){
-  #gameArea{flex-wrap:wrap}
-  .area{width:100%;grid-template-columns:repeat(2,1fr);gap:8px}
-  .img-card,.word-card{height:80px}
-  .img-card{font-size:1.8rem}
-  .word-card{font-size:.75rem;padding:4px}
-}
-</style>
+    /* ===== スマホレイアウト ===== */
+    @media(max-width:480px){
+      #gameArea{flex-wrap:wrap}
+      .area{width:100%;grid-template-columns:repeat(2,1fr);gap:8px}
+      .img-card,.word-card{height:80px}
+      .img-card{font-size:1.8rem}
+      .word-card{font-size:.75rem;padding:4px}
+    }
+  </style>
 </head>
 <body>
 <div id="container">
@@ -56,8 +56,8 @@ button{cursor:pointer;border:none;border-radius:8px;padding:10px 18px;
   <div id="startScreen">
     <h1>Picture-Word Match</h1>
     <div id="modeBtns">
-      <button id="practiceBtn">Practice Mode</button>
-      <button id="trialBtn">30-Set Trial Mode</button>
+      <button id="practiceBtn">Practice&nbsp;Mode</button>
+      <button id="trialBtn">30-Set&nbsp;Trial&nbsp;Mode</button>
     </div>
   </div>
 
@@ -79,205 +79,16 @@ button{cursor:pointer;border:none;border-radius:8px;padding:10px 18px;
 
 <script>
 /* ---------- iOS 音声ロック解除 & ボイスロード ---------- */
-const voicesReady = new Promise(resolve=>{
-  if(speechSynthesis.getVoices().length) return resolve();
-  speechSynthesis.onvoiceschanged = resolve;
+const voicesReady = new Promise(res=>{
+  if(speechSynthesis.getVoices().length) return res();
+  speechSynthesis.onvoiceschanged = res;
 });
 function unlockIOS(){
   if(window._iosUnlocked) return;
   window._iosUnlocked = true;
-  /* 無音 OSC ping */
+
+  /* 無音 ping (AudioContext) */
   try{
     const ctx = new (window.AudioContext||window.webkitAudioContext)();
     const osc = ctx.createOscillator();
     osc.connect(ctx.destination);
-    osc.start(); osc.stop();
-  }catch{}
-  /* ダミー発声 */
-  voicesReady.then(()=>{
-    const u = new SpeechSynthesisUtterance('ready'); u.lang='en-US'; u.volume=0;
-    speechSynthesis.speak(u);
-  });
-}
-['touchstart','mousedown','keydown'].forEach(ev=>{
-  document.addEventListener(ev, unlockIOS, {once:true});
-});
-
-/* ---------- 音声再生 ----------
-   Safari の cancel → pause バグ対策: resume() を必ず挟む */
-function speak(text){
-  voicesReady.then(()=>{
-    speechSynthesis.cancel();     // キュー初期化
-    speechSynthesis.resume();     // Safari 対策
-    const ut = new SpeechSynthesisUtterance(text);
-    ut.lang = 'en-US';
-    ut.voice = speechSynthesis.getVoices().find(v=>v.lang.startsWith('en')) || null;
-    speechSynthesis.speak(ut);
-  });
-}
-
-/* ---------- ゲームデータ ---------- */
-const wordsByCat = {
-  Food:["apple","bread","milk","rice","egg","apples","eggs"],
-  Animals:["dog","cat","bird","elephant","dogs","cats","birds","elephants"],
-  School:["book","pen","pencil","chair","bag","books","pens","pencils","chairs","bags"],
-  Family:["mother","father","sister","brother","grandpa"],
-  Clothes:["shirt","shirts","pants","shoes","coat","coats","hat","hats"],
-  Colors:["red","blue","green","yellow","black","white","orange","purple","brown"],
-  Numbers:["one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve"],
-  Weather:["sunny","rainy","windy","cloudy","snowy"],
-  Actions:["I sleep.","I run.","I drink juice.","I brush my teeth.","I eat sushi."],
-  Feelings:["I am happy.","I am sad.","I am tired.","I am hungry.","I am angry."]
-};
-const emoji = {
-  apple:"🍎",apples:"🍎🍎",bread:"🍞",milk:"🥛",rice:"🍚",egg:"🥚",eggs:"🥚🥚",
-  dog:"🐶",dogs:"🐶🐶",cat:"🐱",cats:"🐱🐱",bird:"🐦",birds:"🐦🐦",elephant:"🐘",elephants:"🐘🐘",
-  book:"📕",books:"📕📕",pen:"🖊️",pens:"🖊️🖊️",pencil:"✏️",pencils:"✏️✏️",chair:"🪑",chairs:"🪑🪑",bag:"🎒",bags:"🎒🎒",
-  mother:"👩",father:"👨",sister:"👧",brother:"👦",grandpa:"👴",
-  shirt:"👕",shirts:"👕👕",pants:"👖",shoes:"👟👟",coat:"🧥",coats:"🧥🧥",hat:"🎩",hats:"🎩🎩",
-  red:"🟥",blue:"🟦",green:"🟩",yellow:"🟨",black:"⬛",white:"⬜",orange:"🟧",purple:"🟪",brown:"🟫",
-  one:"1️⃣",two:"2️⃣",three:"3️⃣",four:"4️⃣",five:"5️⃣",six:"6️⃣",seven:"7️⃣",eight:"8️⃣",nine:"9️⃣",ten:"🔟",
-  eleven:"1️⃣1️⃣",twelve:"1️⃣2️⃣",
-  sunny:"☀️",rainy:"🌧️",windy:"🌬️",cloudy:"☁️",snowy:"❄️",
-  "I sleep.":"😴","I run.":"🏃","I drink juice.":"🧃",
-  "I brush my teeth.":"🪥🦷","I eat sushi.":"🍣🥢",
-  "I am happy.":"😊","I am sad.":"😢","I am tired.":"🥱",
-  "I am hungry.":"🤤","I am angry.":"😠"
-};
-function article(w){return(/^[aeiou]/i.test(w)&&!w.endsWith('s'))?`an ${w}`:w.endsWith('s')?w:`a ${w}`;}
-
-/* ---------- グローバル状態 ---------- */
-let draggedWord = null, touchClone = null, timerInt = null;
-
-/* ---------- ボード生成 ---------- */
-function buildBoard(mode){
-  const imgArea = document.getElementById('imageArea');
-  const wordArea = document.getElementById('wordArea');
-  imgArea.innerHTML = ''; wordArea.innerHTML = '';
-
-  const allWords = Object.values(wordsByCat).flat();
-  const selected = mode === 'trial'
-      ? allWords.sort(()=>0.5-Math.random()).slice(0,30)
-      : wordsByCat[document.getElementById('categorySelect').value];
-
-  /* 画像カード */
-  selected.sort(()=>0.5-Math.random()).forEach(w=>{
-    const d = document.createElement('div');
-    d.className = 'img-card';
-    d.textContent = emoji[w] || w;
-    d.dataset.word = w;
-    d.addEventListener('dragover',e=>e.preventDefault());
-    d.addEventListener('drop', handleDrop);
-    imgArea.appendChild(d);
-  });
-
-  /* 単語カード */
-  selected.sort(()=>0.5-Math.random()).forEach(w=>{
-    const d = document.createElement('div');
-    d.className='word-card'; d.textContent = article(w);
-    d.dataset.word = w; d.draggable = true;
-    d.addEventListener('dragstart', () => { draggedWord = w; speak(article(w)); });
-    d.addEventListener('click', () => speak(article(w)));       // タップでも読む
-    wordArea.appendChild(d);
-  });
-}
-
-/* ---------- ドロップ判定 ---------- */
-function handleDrop(e){
-  const img = e.currentTarget;
-  if(img.dataset.word === draggedWord){
-    img.classList.add('matched','correct-anim');
-    const pair = document.querySelector(`.word-card[data-word="${draggedWord}"]`);
-    pair?.classList.add('matched','correct-anim');
-    setTimeout(()=>{ img.style.display='none'; pair&&(pair.style.display='none'); },200);
-
-    /* Trial モード終了判定 */
-    if(document.getElementById('timer').style.display==='inline'){
-      if(!document.querySelectorAll('.img-card:not([style*="display: none"])').length){
-        clearInterval(timerInt);
-        const sec = document.getElementById('timer').textContent.replace('Time: ','').replace('s','');
-        speak(`${sec} seconds! Great job!`);
-      }
-    }
-  }else{
-    img.classList.add('wrong-anim');
-    setTimeout(()=>img.classList.remove('wrong-anim'),350);
-  }
-}
-
-/* ---------- タッチ専用ドラッグ ---------- */
-document.addEventListener('touchstart', e=>{
-  const base = e.target.closest('.word-card');
-  if(!base || base.classList.contains('matched')) return;
-  draggedWord = base.dataset.word; speak(article(draggedWord));
-
-  touchClone = base.cloneNode(true);
-  Object.assign(touchClone.style,{
-    position:'absolute',pointerEvents:'none',zIndex:1000,opacity:.7,
-    width:base.offsetWidth+'px',height:base.offsetHeight+'px',
-    lineHeight:getComputedStyle(base).lineHeight,
-    fontSize:getComputedStyle(base).fontSize,
-    padding:getComputedStyle(base).padding});
-  document.body.appendChild(touchClone);
-});
-document.addEventListener('touchmove', e=>{
-  if(!touchClone || !e.touches.length) return;
-  const t = e.touches[0];
-  touchClone.style.left = (t.pageX - touchClone.offsetWidth/2)+'px';
-  touchClone.style.top  = (t.pageY - touchClone.offsetHeight/2)+'px';
-});
-document.addEventListener('touchend', e=>{
-  if(!touchClone) return;
-  const el = document.elementFromPoint(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
-  const img = el?.closest('.img-card'); if(img) handleDrop({currentTarget:img});
-  touchClone.remove(); touchClone = null;
-});
-
-/* ---------- タイマー ---------- */
-function startTimer(){
-  const tm = document.getElementById('timer');
-  const st = Date.now();
-  clearInterval(timerInt);
-  timerInt = setInterval(()=>tm.textContent='Time: '+Math.floor((Date.now()-st)/1000)+'s',500);
-}
-
-/* ---------- ゲーム開始／画面切替 ---------- */
-function startGame(mode){
-  document.getElementById('startScreen').style.display='none';
-  const gs = document.getElementById('gameScreen'); gs.style.display='flex';
-
-  const catSel = document.getElementById('categorySelect');
-  const stBtn  = document.getElementById('startCategoryBtn');
-  const timer  = document.getElementById('timer');
-
-  if(mode==='trial'){
-    catSel.style.display='none'; stBtn.style.display='none'; timer.style.display='inline';
-    startTimer(); buildBoard('trial');
-  }else{
-    catSel.style.display='inline'; stBtn.style.display='inline'; timer.style.display='none';
-  }
-}
-
-/* ---------- 初期化 ---------- */
-document.addEventListener('DOMContentLoaded', ()=>{
-  /* ボタンイベント */
-  document.getElementById('practiceBtn').addEventListener('click', ()=>startGame('practice'));
-  document.getElementById('trialBtn').addEventListener('click',    ()=>startGame('trial'));
-  document.getElementById('backBtn').addEventListener('click', ()=>{
-    document.getElementById('gameScreen').style.display='none';
-    document.getElementById('startScreen').style.display='block';
-  });
-  document.getElementById('startCategoryBtn').addEventListener('click', ()=>buildBoard('practice'));
-
-  /* カテゴリー選択肢生成 */
-  const sel = document.getElementById('categorySelect');
-  Object.keys(wordsByCat).forEach(c=>{
-    const o = document.createElement('option'); o.value = o.textContent = c; sel.appendChild(o);
-  });
-
-  /* 早期ボイスロード */
-  speechSynthesis.getVoices();
-});
-</script>
-</body>
-</html>
