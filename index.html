@@ -92,3 +92,218 @@ function unlockIOS(){
     const ctx = new (window.AudioContext||window.webkitAudioContext)();
     const osc = ctx.createOscillator();
     osc.connect(ctx.destination);
+    osc.start(); osc.stop();
+  }catch{}
+
+  /* 無音 utterance */
+  voicesReady.then(()=>{
+    const u = new SpeechSynthesisUtterance('ready');
+    u.lang='en-US'; u.volume=0;
+    speechSynthesis.speak(u);
+  });
+}
+['touchstart','mousedown','keydown'].forEach(ev=>{
+  document.addEventListener(ev,unlockIOS,{once:true});
+});
+
+/* ---------- 音声再生 ---------- */
+function speak(text){
+  voicesReady.then(()=>{
+    speechSynthesis.cancel();
+    speechSynthesis.resume();           // Safari 対策
+    const ut = new SpeechSynthesisUtterance(text);
+    ut.lang = 'en-US';
+    ut.voice = speechSynthesis.getVoices().find(v=>v.lang.startsWith('en')) || null;
+    speechSynthesis.speak(ut);
+  });
+}
+
+/* ---------- 冠詞付与ロジック ---------- */
+function addArticle(word){
+  // 1) 文（空白を含む or ピリオド〆）→ そのまま
+  if(/\s/.test(word) || word.endsWith('.')) return word;
+
+  // 2) 冠詞不要語リスト
+  const noArticle = [
+    "bread","rice","milk",                           // 不可算
+    "red","blue","green","yellow","black","white","orange","purple","brown", // 色
+    "sunny","rainy","windy","cloudy","snowy",        // 天気
+    "one","two","three","four","five","six","seven","eight","nine",
+    "ten","eleven","twelve"                          // 数字
+  ];
+  if(noArticle.includes(word.toLowerCase())) return word;
+
+  // 3) 複数形（語尾 s）→ そのまま
+  if(word.toLowerCase().endsWith('s')) return word;
+
+  // 4) それ以外 → a / an
+  return /^[aeiou]/i.test(word) ? `an ${word}` : `a ${word}`;
+}
+
+/* ---------- データ ---------- */
+const wordsByCat = {
+  Food:["apple","bread","milk","rice","egg","apples","eggs"],
+  Animals:["dog","cat","bird","elephant","dogs","cats","birds","elephants"],
+  School:["book","pen","pencil","chair","bag","books","pens","pencils","chairs","bags"],
+  Family:["mother","father","sister","brother","grandpa"],
+  Clothes:["shirt","shirts","pants","shoes","coat","coats","hat","hats"],
+  Colors:["red","blue","green","yellow","black","white","orange","purple","brown"],
+  Numbers:["one","two","three","four","five","six","seven","eight","nine","ten","eleven","twelve"],
+  Weather:["sunny","rainy","windy","cloudy","snowy"],
+  Actions:["I sleep.","I run.","I drink juice.","I brush my teeth.","I eat sushi."],
+  Feelings:["I am happy.","I am sad.","I am tired.","I am hungry.","I am angry."]
+};
+const emoji = {
+  apple:"🍎",apples:"🍎🍎",bread:"🍞",milk:"🥛",rice:"🍚",egg:"🥚",eggs:"🥚🥚",
+  dog:"🐶",dogs:"🐶🐶",cat:"🐱",cats:"🐱🐱",bird:"🐦",birds:"🐦🐦",elephant:"🐘",elephants:"🐘🐘",
+  book:"📕",books:"📕📕",pen:"🖊️",pens:"🖊️🖊️",pencil:"✏️",pencils:"✏️✏️",chair:"🪑",chairs:"🪑🪑",bag:"🎒",bags:"🎒🎒",
+  mother:"👩",father:"👨",sister:"👧",brother:"👦",grandpa:"👴",
+  shirt:"👕",shirts:"👕👕",pants:"👖",shoes:"👟👟",coat:"🧥",coats:"🧥🧥",hat:"🎩",hats:"🎩🎩",
+  red:"🟥",blue:"🟦",green:"🟩",yellow:"🟨",black:"⬛",white:"⬜",orange:"🟧",purple:"🟪",brown:"🟫",
+  one:"1️⃣",two:"2️⃣",three:"3️⃣",four:"4️⃣",five:"5️⃣",six:"6️⃣",seven:"7️⃣",eight:"8️⃣",nine:"9️⃣",ten:"🔟",
+  eleven:"1️⃣1️⃣",twelve:"1️⃣2️⃣",
+  sunny:"☀️",rainy:"🌧️",windy:"🌬️",cloudy:"☁️",snowy:"❄️",
+  "I sleep.":"😴","I run.":"🏃","I drink juice.":"🧃",
+  "I brush my teeth.":"🪥🦷","I eat sushi.":"🍣🥢",
+  "I am happy.":"😊","I am sad.":"😢","I am tired.":"🥱",
+  "I am hungry.":"🤤","I am angry.":"😠"
+};
+
+/* ---------- 状態 ---------- */
+let draggedWord=null, touchClone=null, timerInt=null;
+
+/* ---------- ボード生成 ---------- */
+function buildBoard(mode){
+  const imgArea=document.getElementById('imageArea');
+  const wordArea=document.getElementById('wordArea');
+  imgArea.innerHTML=''; wordArea.innerHTML='';
+
+  const all=Object.values(wordsByCat).flat();
+  const chosen=mode==='trial'
+      ? all.sort(()=>0.5-Math.random()).slice(0,30)
+      : wordsByCat[document.getElementById('categorySelect').value];
+
+  /* 画像カード */
+  chosen.sort(()=>0.5-Math.random()).forEach(w=>{
+    const d=document.createElement('div');
+    d.className='img-card';
+    d.textContent=emoji[w]||w;
+    d.dataset.word=w;
+    d.addEventListener('dragover',e=>e.preventDefault());
+    d.addEventListener('drop',handleDrop);
+    imgArea.appendChild(d);
+  });
+
+  /* 単語カード */
+  chosen.sort(()=>0.5-Math.random()).forEach(w=>{
+    const d=document.createElement('div');
+    d.className='word-card';
+    d.textContent=addArticle(w);
+    d.dataset.word=w;
+    d.draggable=true;
+    d.addEventListener('dragstart',()=>{draggedWord=w;speak(addArticle(w));});
+    d.addEventListener('click',()=>speak(addArticle(w)));        // タップでも発声
+    wordArea.appendChild(d);
+  });
+}
+
+/* ---------- ドロップ判定 ---------- */
+function handleDrop(e){
+  const img=e.currentTarget;
+  if(img.dataset.word===draggedWord){
+    img.classList.add('matched','correct-anim');
+    const pair=document.querySelector(`.word-card[data-word="${draggedWord}"]`);
+    pair?.classList.add('matched','correct-anim');
+    setTimeout(()=>{img.style.display='none';pair&&(pair.style.display='none');},200);
+
+    /* Trial 終了判定 */
+    if(document.getElementById('timer').style.display==='inline'){
+      if(!document.querySelectorAll('.img-card:not([style*="display: none"])').length){
+        clearInterval(timerInt);
+        const sec=document.getElementById('timer').textContent.replace('Time: ','').replace('s','');
+        speak(`${sec} seconds! Great job!`);
+      }
+    }
+  }else{
+    img.classList.add('wrong-anim');
+    setTimeout(()=>img.classList.remove('wrong-anim'),350);
+  }
+}
+
+/* ---------- タッチドラッグ ---------- */
+document.addEventListener('touchstart',e=>{
+  const base=e.target.closest('.word-card');
+  if(!base||base.classList.contains('matched')) return;
+  draggedWord=base.dataset.word; speak(addArticle(draggedWord));
+
+  touchClone=base.cloneNode(true);
+  Object.assign(touchClone.style,{
+    position:'absolute',pointerEvents:'none',zIndex:1000,opacity:.7,
+    width:base.offsetWidth+'px',height:base.offsetHeight+'px',
+    lineHeight:getComputedStyle(base).lineHeight,
+    fontSize:getComputedStyle(base).fontSize,
+    padding:getComputedStyle(base).padding
+  });
+  document.body.appendChild(touchClone);
+});
+document.addEventListener('touchmove',e=>{
+  if(!touchClone||!e.touches.length) return;
+  const t=e.touches[0];
+  touchClone.style.left=(t.pageX-touchClone.offsetWidth/2)+'px';
+  touchClone.style.top =(t.pageY-touchClone.offsetHeight/2)+'px';
+});
+document.addEventListener('touchend',e=>{
+  if(!touchClone) return;
+  const el=document.elementFromPoint(e.changedTouches[0].clientX,e.changedTouches[0].clientY);
+  const img=el?.closest('.img-card'); if(img) handleDrop({currentTarget:img});
+  touchClone.remove(); touchClone=null;
+});
+
+/* ---------- タイマー ---------- */
+function startTimer(){
+  const tm=document.getElementById('timer');
+  const st=Date.now();
+  clearInterval(timerInt);
+  timerInt=setInterval(()=>tm.textContent='Time: '+Math.floor((Date.now()-st)/1000)+'s',500);
+}
+
+/* ---------- ゲーム開始 ---------- */
+function startGame(mode){
+  document.getElementById('startScreen').style.display='none';
+  const gs=document.getElementById('gameScreen'); gs.style.display='flex';
+
+  const catSel=document.getElementById('categorySelect');
+  const stBtn =document.getElementById('startCategoryBtn');
+  const timer =document.getElementById('timer');
+
+  if(mode==='trial'){
+    catSel.style.display='none'; stBtn.style.display='none'; timer.style.display='inline';
+    startTimer(); buildBoard('trial');
+  }else{
+    catSel.style.display='inline'; stBtn.style.display='inline'; timer.style.display='none';
+  }
+}
+
+/* ---------- 初期化 ---------- */
+document.addEventListener('DOMContentLoaded',()=>{
+  /* ボタン */
+  document.getElementById('practiceBtn').addEventListener('click',()=>startGame('practice'));
+  document.getElementById('trialBtn')   .addEventListener('click',()=>startGame('trial'));
+  document.getElementById('backBtn')    .addEventListener('click',()=>{
+    document.getElementById('gameScreen').style.display='none';
+    document.getElementById('startScreen').style.display='block';
+  });
+  document.getElementById('startCategoryBtn').addEventListener('click',()=>buildBoard('practice'));
+
+  /* カテゴリー選択肢 */
+  const sel=document.getElementById('categorySelect');
+  Object.keys(wordsByCat).forEach(c=>{
+    const o=document.createElement('option'); o.value=o.textContent=c; sel.appendChild(o);
+  });
+
+  /* ボイス先読み */
+  speechSynthesis.getVoices();
+});
+</script>
+</body>
+</html>
