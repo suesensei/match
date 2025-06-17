@@ -21,9 +21,10 @@ button{cursor:pointer;border:none;border-radius:8px;padding:10px 18px;
 .img-card,.word-card{width:100%;height:100px;border-radius:12px;display:flex;
                      align-items:center;justify-content:center;user-select:none;
                      touch-action:none;transition:transform .25s}
-.img-card{font-size:2.2rem;background:#fff3e0;border:3px solid #ffb74d}
-.word-card{font-size:.9rem;background:#e3f2fd;border:3px solid #64b5f6;
-           cursor:grab;padding:6px;text-align:center;line-height:1.15}
+/* 文字を大きく・濃く */
+.img-card{font-size:2.5rem;background:#fff3e0;border:3px solid #ffb74d}
+.word-card{font-size:1.1rem;font-weight:600;background:#e3f2fd;border:3px solid #64b5f6;
+           cursor:grab;padding:6px;text-align:center;line-height:1.15;color:#000}
 .matched{opacity:.35;cursor:default}
 @keyframes flash{from{background:#c8e6c9}to{background:#fff3e0}}
 @keyframes shake{10%,90%{transform:translateX(-4px)}
@@ -37,8 +38,9 @@ button{cursor:pointer;border:none;border-radius:8px;padding:10px 18px;
   #gameArea{flex-wrap:wrap}
   .area{width:100%;grid-template-columns:repeat(2,1fr);gap:8px}
   .img-card,.word-card{height:80px}
-  .img-card{font-size:1.8rem}
-  .word-card{font-size:.75rem;padding:4px}
+  /* 文字を大きく・濃く（モバイル） */
+  .img-card{font-size:2rem}
+  .word-card{font-size:.9rem;font-weight:600;padding:4px}
 }
 /* ===== コンフェッティ Canvas ===== */
 #confettiCanvas{
@@ -267,7 +269,7 @@ function startTimer(){
   timerInt=setInterval(()=>tm.textContent='Time: '+Math.floor((Date.now()-st)/1000)+'s',500);
 }
 
-/* ---------- ゲーム開始 ---------- */
+/* ---------- 游戏開始 ---------- */
 function startGame(mode){
   document.getElementById('startScreen').style.display='none';
   const gs=document.getElementById('gameScreen');gs.style.display='flex';
